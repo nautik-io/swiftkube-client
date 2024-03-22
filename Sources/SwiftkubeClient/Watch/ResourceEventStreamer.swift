@@ -31,19 +31,15 @@ internal class ResourceEventStreamer<Resource: KubernetesAPIResource>: DataStrea
 	}
 
 	internal override func process(data: Data, continuation: AsyncThrowingStream<WatchEvent<Resource>, Error>.Continuation) {
-		guard let string = String(data: data, encoding: .utf8) else {
-			continuation.finish(throwing: SwiftkubeClientError.decodingError("Could not deserialize payload"))
-			return
-		}
+		var buffer = data
+		while let eolIndex = buffer.firstIndex(of: 0x0A) {
+			let lineData = buffer[..<eolIndex]
 
-		string.enumerateLines { line, _ in
-			guard
-				let data = line.data(using: .utf8),
-				let event = try? self.decoder.decode(meta.v1.WatchEvent.self, from: data)
-			else {
+			guard let event = try? self.decoder.decode(meta.v1.WatchEvent.self, from: lineData) else {
 				continuation.finish(throwing: SwiftkubeClientError.decodingError("Error decoding meta.v1.WatchEvent payload"))
 				return
 			}
+            buffer.removeSubrange(...eolIndex)
 
 			guard let eventType = EventType(rawValue: event.type) else {
 				continuation.finish(throwing: SwiftkubeClientError.decodingError("Error parsing EventType"))
