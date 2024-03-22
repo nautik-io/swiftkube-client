@@ -411,6 +411,10 @@ internal extension RequestBuilder {
 			headers.append(("Authorization", authorizationHeader))
 		}
 
+		if self.config.gzip {
+			headers.append(("Accept-Encoding", "gzip"))
+		}
+
 		return HTTPHeaders(headers)
 	}
 }
