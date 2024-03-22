@@ -315,7 +315,7 @@ extension RequestBuilder: DeleteStep {
 internal extension RequestBuilder {
 
 	func build() throws -> KubernetesRequest {
-		components?.path = urlPath(forNamespace: namespace, name: resourceName)
+		components?.path += urlPath(forNamespace: namespace, name: resourceName)
 
 		if let subResourceType = subResourceType {
 			components?.path += subResourceType.path
