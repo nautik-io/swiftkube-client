@@ -104,6 +104,7 @@ public actor KubernetesClient {
 		}()
 	#endif
 
+	#if os(Linux) || os(macOS)
 	/// Create a new instance of the Kubernetes client.
 	///
 	/// The client tries to resolve a `kube config` automatically from different sources in the following order:
@@ -113,6 +114,9 @@ public actor KubernetesClient {
 	/// - `ServiceAccount` token located at `/var/run/secrets/kubernetes.io/serviceaccount/token` and a mounted CA certificate, if it's running in Kubernetes.
 	///
 	/// Returns `nil` if a configuration can't be found.
+	///
+	/// - Note: This initializer is only available on Linux and macOS. On iOS, tvOS, and watchOS, you must use
+	///         `init(config:provider:logger:)` with a manually configured `KubernetesClientConfig`.
 	///
 	/// - Parameters:
 	///    - provider: A ``EventLoopGroupProvider`` to specify how ``EventLoopGroup`` will be created.
@@ -129,6 +133,7 @@ public actor KubernetesClient {
 
 		self.init(config: config, provider: provider, logger: logger)
 	}
+	#endif
 
 	/// Create a new instance of the Kubernetes client.
 	///

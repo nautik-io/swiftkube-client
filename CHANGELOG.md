@@ -1,5 +1,8 @@
 # Changelog
 
+## [Unreleased]
+- Add guards so that the client is usable on iOS
+
 ## 0.25.0
 
 - Refactor configuration builders and add support for overriding the current k8s context (#47 by nefilim)

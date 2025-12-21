@@ -31,6 +31,7 @@ public extension KubeConfig {
 		return try from(config: contents)
 	}
 
+	#if os(Linux) || os(macOS)
 	static func fromEnvironment(envVar: String = "KUBECONFIG", logger: Logger? = nil) throws -> KubeConfig? {
 		guard let varContent = ProcessInfo.processInfo.environment[envVar] else {
 			logger?.info("Skipping kubeconfig because environment variable \(envVar) is not set")
@@ -43,7 +44,9 @@ public extension KubeConfig {
 
 		return try from(url: kubeConfigURL)
 	}
+	#endif
 
+	#if os(Linux) || os(macOS)
 	static func fromDefaultLocalConfig(logger: Logger? = nil) throws -> KubeConfig? {
 		guard let homePath = ProcessInfo.processInfo.environment["HOME"] else {
 			logger?.info("Skipping kubeconfig in $HOME/.kube/config because HOME env variable is not set.")
@@ -55,7 +58,9 @@ public extension KubeConfig {
 
 		return try from(url: kubeConfigURL)
 	}
+	#endif
 
+	#if os(Linux) || os(macOS)
 	static func fromServiceAccount(logger: Logger? = nil) throws -> KubeConfig? {
 		guard
 			let host = ProcessInfo.processInfo.environment["KUBERNETES_SERVICE_HOST"],
@@ -120,8 +125,10 @@ public extension KubeConfig {
 			currentContext: "service-account-context"
 		)
 	}
+	#endif
 }
 
+#if os(Linux) || os(macOS)
 internal extension String {
 
 	func stringByExpandingTildePath() -> String {
@@ -143,3 +150,4 @@ internal extension String {
 		return FileManager.default.homeDirectoryForCurrentUser.path + "/" + relativePath
 	}
 }
+#endif

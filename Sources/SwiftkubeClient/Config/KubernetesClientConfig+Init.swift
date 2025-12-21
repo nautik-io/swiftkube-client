@@ -22,6 +22,7 @@ import Yams
 
 public extension KubernetesClientConfig {
 
+	#if os(Linux) || os(macOS)
 	/// Initializes a client configuration.
 	///
 	/// This factory method tries to resolve a `kube config` automatically from  different sources in the following order:
@@ -31,6 +32,9 @@ public extension KubernetesClientConfig {
 	/// - `ServiceAccount` token located at `/var/run/secrets/kubernetes.io/serviceaccount/token` and a mounted CA certificate, if it's running in Kubernetes.
 	///
 	/// It is also possible to override the default values for the underlying `HTTPClient` timeout and redirect config.
+	///
+	/// - Note: This method is only available on Linux and macOS. On iOS, tvOS, and watchOS, you must manually configure
+	///         the client using `KubernetesClientConfig.init()` or `from(kubeConfig:)`.
 	///
 	/// - Parameters:
 	///   - timeout: The desired timeout configuration to apply. If not provided, then `connect` timeout will  default to 10 seconds.
@@ -66,6 +70,7 @@ public extension KubernetesClientConfig {
 			logger: logger
 		)
 	}
+	#endif
 
 	/// Initializes a client configuration from a given KubeConfig using the specified `current-context`.
 	///
