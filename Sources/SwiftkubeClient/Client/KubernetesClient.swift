@@ -46,7 +46,16 @@ public actor KubernetesClient {
 	#if compiler(>=6.0)
 		internal let jsonDecoder: JSONDecoder = {
 			let timeFormatter = Date.ISO8601FormatStyle.iso8601
-			let microTimeFormatter = Date.ISO8601FormatStyle.iso8601.time(includingFractionalSeconds: true)
+			let milliTimeFormatter = Date.ISO8601FormatStyle.iso8601.time(includingFractionalSeconds: true)
+
+			let microTimeFormatter: DateFormatter = {
+				let formatter = DateFormatter()
+				formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
+				formatter.locale = Locale(identifier: "en_US_POSIX")
+				formatter.timeZone = TimeZone(secondsFromGMT: 0)
+				return formatter
+			}()
+
 			let jsonDecoder = JSONDecoder()
 			jsonDecoder.dateDecodingStrategy = .custom { decoder -> Date in
 				let string = try decoder.singleValueContainer().decode(String.self)
@@ -55,13 +64,17 @@ public actor KubernetesClient {
 					return date
 				}
 
-				if let date = try? microTimeFormatter.parse(string) {
+				if let date = try? milliTimeFormatter.parse(string) {
+					return date
+				}
+
+				if let date = microTimeFormatter.date(from: string) {
 					return date
 				}
 
 				let context = DecodingError.Context(
 					codingPath: decoder.codingPath,
-					debugDescription: "Expected date string to be either ISO8601 or ISO8601 with milliseconds."
+					debugDescription: "Expected date string to be ISO8601, with milliseconds, or microseconds."
 				)
 				throw DecodingError.dataCorrupted(context)
 			}
@@ -76,16 +89,29 @@ public actor KubernetesClient {
 				return formatter
 			}()
 
-			let microTimeFormatter = {
+			let milliTimeFormatter: ISO8601DateFormatter = {
 				let formatter = ISO8601DateFormatter()
-				formatter.formatOptions = .withFractionalSeconds
+				formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 				return formatter
 			}()
+
+			let microTimeFormatter: DateFormatter = {
+				let formatter = DateFormatter()
+				formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
+				formatter.locale = Locale(identifier: "en_US_POSIX")
+				formatter.timeZone = TimeZone(secondsFromGMT: 0)
+				return formatter
+			}()
+
 			let jsonDecoder = JSONDecoder()
 			jsonDecoder.dateDecodingStrategy = .custom { decoder -> Date in
 				let string = try decoder.singleValueContainer().decode(String.self)
 
 				if let date = timeFormatter.date(from: string) {
+					return date
+				}
+
+				if let date = milliTimeFormatter.date(from: string) {
 					return date
 				}
 
@@ -95,7 +121,7 @@ public actor KubernetesClient {
 
 				let context = DecodingError.Context(
 					codingPath: decoder.codingPath,
-					debugDescription: "Expected date string to be either ISO8601 or ISO8601 with milliseconds."
+					debugDescription: "Expected date string to be ISO8601, with milliseconds, or microseconds."
 				)
 				throw DecodingError.dataCorrupted(context)
 			}
