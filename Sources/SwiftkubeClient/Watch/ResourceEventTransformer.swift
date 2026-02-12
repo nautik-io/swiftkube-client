@@ -42,6 +42,23 @@ internal struct ResourceEventTransformer<Resource: KubernetesAPIResource>: DataS
 			return .failure(SwiftkubeClientError.decodingError("Error parsing EventType"))
 		}
 
+		// Handle ERROR events specially - the object is a meta.v1.Status, not the resource type.
+		// This commonly happens with HTTP 410 Gone responses when the resourceVersion is too old.
+		if eventType == .error {
+			guard
+				let jsonData = try? JSONSerialization.data(withJSONObject: event.object.properties),
+				let status = try? decoder.decode(meta.v1.Status.self, from: jsonData)
+			else {
+				// If we can't decode the status, create a generic one
+				let genericStatus = meta.v1.Status(
+					code: nil,
+					message: "Watch error event received but could not decode status"
+				)
+				return .failure(SwiftkubeClientError.statusError(genericStatus))
+			}
+			return .failure(SwiftkubeClientError.statusError(status))
+		}
+
 		guard
 			let jsonData = try? JSONSerialization.data(withJSONObject: event.object.properties),
 			let resource = try? decoder.decode(Resource.self, from: jsonData)

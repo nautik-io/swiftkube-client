@@ -129,6 +129,19 @@ public actor SwiftkubeClientTask<Output: Sendable> {
 					}
 				} catch {
 					logger.debug("Error occurred while streaming data: \(error.localizedDescription)")
+
+					// Check if this is a 410 Gone error (resourceVersion too old).
+					// In this case, we need to clear the resourceVersion so the next retry
+					// starts the watch from scratch instead of using a stale resourceVersion.
+					// This prevents a tight retry loop where every request immediately fails with 410.
+					if case let SwiftkubeClientError.statusError(status) = error,
+					   status.code == 410
+					{
+						logger.debug(
+							"Received 410 Gone - clearing resourceVersion to restart watch from scratch"
+						)
+						self.request.resourceVersion = nil
+					}
 				}
 
 				guard !Task.isCancelled else {
